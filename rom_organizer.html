@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROM & BIOS Organizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .drag-area-active {
+            border-color: #3b82f6; /* blue-500 */
+            background-color: #1f2937; /* gray-800 */
+        }
+        .group-card {
+            border: 1px solid #374151; /* gray-700 */
+            transition: all 0.2s ease-in-out;
+        }
+        .group-card:hover {
+            border-color: #4b5563; /* gray-600 */
+            transform: translateY(-2px);
+        }
+        .best-rom {
+            border: 1px solid #10b981; /* emerald-500 */
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+        .bad-rom {
+            color: #ef4444; /* red-500 */
+            text-decoration: line-through;
+        }
+        .proto-rom {
+            color: #f59e0b; /* amber-500 */
+        }
+        .hidden {
+            display: none;
+        }
+        #log-output {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #111827; /* gray-900 */
+            border: 1px solid #374151; /* gray-700 */
+        }
+        #settings-panel {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <div class="container mx-auto p-4 md:p-8 relative">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">ROM & BIOS Organizer</h1>
+            <p class="text-lg text-gray-400">Select files, a folder, or drag and drop your collection to analyze them.</p>
+        </header>
+        
+        <!-- Settings Icon -->
+        <div class="absolute top-4 right-4">
+            <button id="settings-btn" class="text-gray-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settings-panel" class="fixed top-16 right-4 bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-700 transform translate-x-full z-10">
+            <h4 class="font-bold text-white mb-2">Settings</h4>
+            <div class="flex items-center space-x-2">
+                <label for="chunk-size-input" class="text-sm text-gray-300">Chunk Size:</label>
+                <input type="number" id="chunk-size-input" class="bg-gray-900 text-white rounded-md p-1 w-24 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+             <p class="text-xs text-gray-500 mt-1">Smaller is safer for large folders.</p>
+        </div>
+
+
+        <!-- File Drop Area -->
+        <div id="drop-zone" class="border-2 border-dashed border-gray-600 rounded-lg p-8 md:p-16 text-center transition-all duration-300 ease-in-out bg-gray-800/50">
+            <div id="drop-zone-content">
+                <svg class="mx-auto h-12 w-12 text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <p class="mt-4 text-lg text-gray-400">
+                    <span id="select-files-btn" class="font-semibold text-blue-400 cursor-pointer hover:underline">Click to select files</span>,
+                    <span id="select-folder-btn" class="font-semibold text-emerald-400 cursor-pointer hover:underline">select a folder</span>,
+                    or drag and drop
+                </p>
+                <p class="text-sm text-gray-500">All processing is done locally in your browser</p>
+            </div>
+            <input type="file" id="file-input" class="hidden" multiple>
+            <input type="file" id="folder-input" class="hidden" webkitdirectory multiple>
+        </div>
+
+        <!-- Analysis Results -->
+        <div id="results-area" class="mt-8 hidden">
+            <!-- Progress Panel -->
+            <div id="processing-indicator" class="text-center bg-gray-800/50 rounded-lg p-8">
+                <p class="text-lg font-semibold mb-4 text-white">Scanning Collection...</p>
+                <div class="w-full bg-gray-700 rounded-full h-4 mb-4">
+                    <div id="progress-bar" class="bg-emerald-500 h-4 rounded-full transition-all duration-150" style="width: 0%"></div>
+                </div>
+                <!-- Log Window -->
+                <div id="log-output" class="text-left text-xs font-mono p-4 rounded-md h-48 overflow-y-scroll"></div>
+            </div>
+            <!-- Placeholder -->
+            <div id="placeholder" class="text-center text-gray-500 py-12 hidden">
+                <p>No valid ROM/BIOS files found.</p>
+            </div>
+            <!-- Results Grid -->
+            <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                <!-- Group cards will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Template for a result card -->
+    <template id="group-card-template">
+        <div class="group-card bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+            <div class="p-5">
+                <h3 class="text-xl font-bold text-white truncate"></h3>
+                <div class="mt-4 space-y-3">
+                    <div>
+                        <p class="text-sm font-medium text-emerald-400 mb-1">✓ Best Version</p>
+                        <div class="best-rom bg-gray-900/50 rounded-md p-3 text-sm"></div>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-400 mb-1">Other Versions</p>
+                        <ul class="other-roms-list space-y-2 text-sm text-gray-300"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- UI Elements ---
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+            const folderInput = document.getElementById('folder-input');
+            const selectFilesBtn = document.getElementById('select-files-btn');
+            const selectFolderBtn = document.getElementById('select-folder-btn');
+            const resultsArea = document.getElementById('results-area');
+            const placeholder = document.getElementById('placeholder');
+            const processingIndicator = document.getElementById('processing-indicator');
+            const progressBar = document.getElementById('progress-bar');
+            const logOutput = document.getElementById('log-output');
+            const resultsGrid = document.getElementById('results-grid');
+            const groupCardTemplate = document.getElementById('group-card-template');
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsPanel = document.getElementById('settings-panel');
+            const chunkSizeInput = document.getElementById('chunk-size-input');
+
+            // --- App State ---
+            let worker = null;
+            let CHUNK_SIZE = 200;
+
+            // --- Worker Script ---
+            const workerScript = `
+                let groups = {};
+                self.onmessage = function(e) {
+                    const msg = e.data;
+                    if (msg.type === 'processChunk') {
+                        const chunk = msg.chunk;
+                        for (let i = 0; i < chunk.length; i++) {
+                            const filename = chunk[i];
+                            if (!filename || filename === '.DS_Store' || filename === 'Thumbs.db') continue;
+                            const parsed = parseFilename(filename);
+                            if (!groups[parsed.baseName]) groups[parsed.baseName] = [];
+                            groups[parsed.baseName].push(parsed);
+                        }
+                        self.postMessage({ type: 'chunkProcessed', count: chunk.length });
+                    } else if (msg.type === 'finalize') {
+                        self.postMessage({ type: 'log', message: 'Analysis complete. Sorting results...' });
+                        for (const groupName in groups) {
+                            groups[groupName].sort((a, b) => b.score - a.score);
+                        }
+                        self.postMessage({ type: 'complete', groups: groups });
+                    }
+                };
+                function parseFilename(filename) {
+                    let score = 0;
+                    const info = { filename, baseName: filename, region: 'Unknown', revision: null, isProto: false, isBadDump: false, isGoodDump: false };
+                    
+                    const nameMatch = filename.match(new RegExp("^(.*?)\\\\s*(\\\\(|\\\\[)"));
+                    info.baseName = nameMatch ? nameMatch[1].trim() : (filename.lastIndexOf('.') > 0 ? filename.substring(0, filename.lastIndexOf('.')) : filename);
+                    
+                    if (filename.includes('[!]')) { info.isGoodDump = true; score += 1000; }
+                    
+                    const regionMatch = filename.match(new RegExp("\\\\((USA|World|Europe|Japan|En,Ja|J|E|U)\\\\)","i"));
+                    if (regionMatch) { info.region = regionMatch[1]; if (['USA', 'World', 'Europe'].includes(info.region)) score += 100; else if (info.region === 'Japan') score += 50; }
+                    
+                    const revMatch = filename.match(new RegExp("\\\\((Rev\\\\s*(\\\\d+|\\\\w)|v(\\\\d\\\\.\\\\d))\\\\)", "i"));
+                    if (revMatch) { info.revision = revMatch[0]; let revScore = parseFloat(revMatch[2] || revMatch[3] || '0') * 10; if (isNaN(revScore)) { revScore = (revMatch[2].toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1) * 10; } score += revScore; }
+                    
+                    if (new RegExp("\\\\[b\\\\d*\\\\]", "i").test(filename)) { info.isBadDump = true; score -= 5000; }
+                    if (new RegExp("\\\\(Proto\\\\)", "i").test(filename)) { info.isProto = true; score -= 1000; }
+                    
+                    info.score = score;
+                    return info;
+                }
+            `;
+            const workerBlob = new Blob([workerScript], { type: 'application/javascript' });
+            const workerUrl = URL.createObjectURL(workerBlob);
+
+            // --- Functions ---
+            function log(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const p = document.createElement('p');
+                p.innerHTML = `<span class="text-gray-500">${timestamp}:</span> ${message}`;
+                logOutput.appendChild(p);
+                logOutput.scrollTop = logOutput.scrollHeight;
+            }
+
+            function initializeUI() {
+                if (worker) worker.terminate();
+                worker = new Worker(workerUrl);
+
+                dropZone.classList.add('hidden');
+                resultsArea.classList.remove('hidden');
+                processingIndicator.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                resultsGrid.innerHTML = '';
+                logOutput.innerHTML = '';
+                progressBar.style.width = '0%';
+                
+                log('Worker initiated. Starting scan...');
+            }
+
+            async function handleFileSelection(items) {
+                if (!items || items.length === 0) return;
+                initializeUI();
+
+                let totalFileCount = 0;
+                let processedCount = 0;
+
+                worker.onmessage = (e) => {
+                    const data = e.data;
+                    if (data.type === 'chunkProcessed') {
+                        processedCount += data.count;
+                        if (totalFileCount > 0) {
+                            const percent = Math.round((processedCount / totalFileCount) * 100);
+                            progressBar.style.width = `${percent}%`;
+                        }
+                    } else if (data.type === 'log') {
+                        log(data.message);
+                    } else if (data.type === 'complete') {
+                        progressBar.style.width = `100%`;
+                        log('Processing complete. Displaying results.');
+                        displayResults(data.groups);
+                        worker.terminate();
+                        worker = null;
+                    }
+                };
+
+                worker.onerror = (e) => {
+                    console.error('Error in worker:', e);
+                    log(`<span class="text-red-500">An error occurred: ${e.message}</span>`);
+                    if(worker) worker.terminate();
+                };
+
+                // --- New Robust File Traversal ---
+                log('Starting directory traversal...');
+                let fileBuffer = [];
+                let filesFound = 0;
+
+                async function processEntry(entry) {
+                    if (entry.isFile) {
+                        filesFound++;
+                        fileBuffer.push(entry.name);
+                        if (fileBuffer.length >= CHUNK_SIZE) {
+                            worker.postMessage({ type: 'processChunk', chunk: [...fileBuffer] });
+                            log(`Found and sent ${filesFound} files for analysis...`);
+                            fileBuffer = [];
+                            await new Promise(r => setTimeout(r, 0)); // Yield to main thread
+                        }
+                    } else if (entry.isDirectory) {
+                        log(`Scanning directory: ${entry.name}`);
+                        const dirReader = entry.createReader();
+                        let entries;
+                        do {
+                            entries = await new Promise((resolve) => dirReader.readEntries(resolve));
+                            for (const subEntry of entries) {
+                                await processEntry(subEntry);
+                            }
+                        } while (entries.length > 0);
+                    }
+                }
+
+                try {
+                    const entries = Array.from(items).map(item => item.webkitGetAsEntry ? item.webkitGetAsEntry() : { isFile: true, name: item.name }).filter(Boolean);
+                    for (const entry of entries) {
+                        await processEntry(entry);
+                    }
+                } catch (e) {
+                    log(`<span class="text-red-500">Error during file traversal: ${e.message}</span>`);
+                    // Fallback for simple file list
+                    const fileList = Array.from(items).map(f => f.name);
+                    worker.postMessage({ type: 'processChunk', chunk: fileList });
+                }
+
+                if (fileBuffer.length > 0) {
+                    worker.postMessage({ type: 'processChunk', chunk: fileBuffer });
+                }
+                
+                totalFileCount = filesFound;
+                log(`Traversal complete. Found ${totalFileCount} total files.`);
+                worker.postMessage({ type: 'finalize' });
+            }
+            
+            function displayResults(groupedFiles) {
+                processingIndicator.classList.add('hidden');
+                const sortedGroupKeys = Object.keys(groupedFiles).sort((a, b) => a.localeCompare(b));
+
+                if (sortedGroupKeys.length === 0) {
+                    placeholder.classList.remove('hidden');
+                } else {
+                    log(`Displaying ${sortedGroupKeys.length} groups.`);
+                    for (const groupName of sortedGroupKeys) {
+                        displayGroup(groupName, groupedFiles[groupName]);
+                    }
+                }
+            }
+
+            function displayGroup(groupName, items) {
+                const cardClone = groupCardTemplate.content.cloneNode(true);
+                const cardElement = cardClone.querySelector('.group-card');
+                const titleElement = cardElement.querySelector('h3');
+                const bestRomElement = cardElement.querySelector('.best-rom');
+                const otherRomsList = cardElement.querySelector('.other-roms-list');
+
+                titleElement.textContent = groupName;
+                titleElement.title = groupName;
+                const bestRom = items[0];
+                bestRomElement.textContent = bestRom.filename;
+                if(bestRom.isBadDump) bestRomElement.classList.add('bad-rom');
+                if(bestRom.isProto) bestRomElement.classList.add('proto-rom');
+
+                if (items.length > 1) {
+                    items.slice(1).forEach(rom => {
+                        const li = document.createElement('li');
+                        li.textContent = rom.filename;
+                        if (rom.isBadDump) li.classList.add('bad-rom');
+                        if (rom.isProto) li.classList.add('proto-rom');
+                        otherRomsList.appendChild(li);
+                    });
+                } else {
+                     otherRomsList.parentElement.classList.add('hidden');
+                }
+                resultsGrid.appendChild(cardElement);
+            }
+
+            // --- Settings Logic ---
+            function loadSettings() {
+                const savedChunkSize = localStorage.getItem('romOrganizerChunkSize');
+                if (savedChunkSize) {
+                    CHUNK_SIZE = parseInt(savedChunkSize, 10);
+                }
+                chunkSizeInput.value = CHUNK_SIZE;
+            }
+
+            function saveSettings() {
+                const newSize = parseInt(chunkSizeInput.value, 10);
+                if (!isNaN(newSize) && newSize > 0) {
+                    CHUNK_SIZE = newSize;
+                    localStorage.setItem('romOrganizerChunkSize', CHUNK_SIZE);
+                    log(`Chunk size set to ${CHUNK_SIZE}`);
+                }
+            }
+
+            settingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                settingsPanel.classList.toggle('translate-x-full');
+            });
+            document.addEventListener('click', (e) => {
+                if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
+                    settingsPanel.classList.add('translate-x-full');
+                }
+            });
+            chunkSizeInput.addEventListener('change', saveSettings);
+            
+            // --- Initial Event Listeners ---
+            loadSettings();
+            selectFilesBtn.addEventListener('click', () => fileInput.click());
+            selectFolderBtn.addEventListener('click', () => folderInput.click());
+            fileInput.addEventListener('change', (e) => handleFileSelection(e.target.files));
+            folderInput.addEventListener('change', (e) => handleFileSelection(e.dataTransfer ? e.dataTransfer.items : e.target.files));
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('drag-area-active');
+                handleFileSelection(e.dataTransfer.items);
+            });
+            ['dragenter', 'dragover', 'dragleave'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if(eventName === 'dragenter' || eventName === 'dragover') {
+                        dropZone.classList.add('drag-area-active');
+                    } else {
+                        dropZone.classList.remove('drag-area-active');
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
