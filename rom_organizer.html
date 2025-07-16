@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,81 +7,154 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root, [data-theme="dark"] {
+            --bg-main: #111827;
+            --bg-panel: #1f2937;
+            --bg-panel-trans: rgba(31, 41, 55, 0.5);
+            --bg-inset: #111827;
+            --text-main: #d1d5db;
+            --text-light: #9ca3af;
+            --text-accent: #34d399;
+            --border-color: #374151;
+            --best-rom-border: #10b981;
+            --best-rom-bg: rgba(16, 185, 129, 0.1);
+        }
+        [data-theme="blue"] {
+            --bg-main: #f1f5f9;
+            --bg-panel: #ffffff;
+            --bg-panel-trans: #ffffff;
+            --bg-inset: #e2e8f0;
+            --text-main: #1e293b;
+            --text-light: #475569;
+            --text-accent: #3b82f6;
+            --border-color: #cbd5e1;
+            --best-rom-border: #3b82f6;
+            --best-rom-bg: rgba(59, 130, 246, 0.1);
+        }
+        [data-theme="vibrant"] {
+            --bg-main: #f9fafb;
+            --bg-panel: #ffffff;
+            --bg-panel-trans: #ffffff;
+            --bg-inset: #f3f4f6;
+            --text-main: #1f2937;
+            --text-light: #4b5563;
+            --text-accent: #f59e0b;
+            --border-color: #e5e7eb;
+            --best-rom-border: #f59e0b;
+            --best-rom-bg: rgba(245, 158, 11, 0.1);
+        }
+        [data-theme="retro"] {
+            --bg-main: #6474CF;
+            --bg-panel: #5765C0;
+            --bg-panel-trans: rgba(87, 101, 192, 0.5);
+            --bg-inset: #4A55A8;
+            --text-main: #E0E7FF;
+            --text-light: #C7D2FE;
+            --text-accent: #87DFFF;
+            --border-color: #5765C0;
+            --best-rom-border: #87DFFF;
+            --best-rom-bg: rgba(135, 223, 255, 0.1);
+        }
+
         body {
             font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
         }
         .drag-area-active {
-            border-color: #3b82f6; /* blue-500 */
-            background-color: #1f2937; /* gray-800 */
-        }
-        .group-card {
-            border: 1px solid #374151; /* gray-700 */
-            transition: all 0.2s ease-in-out;
-        }
-        .group-card:hover {
-            border-color: #4b5563; /* gray-600 */
-            transform: translateY(-2px);
+            border-color: var(--text-accent);
         }
         .best-rom {
-            border: 1px solid #10b981; /* emerald-500 */
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+            border-left: 4px solid var(--best-rom-border);
+            background-color: var(--best-rom-bg);
         }
         .bad-rom {
-            color: #ef4444; /* red-500 */
+            color: #ef4444;
             text-decoration: line-through;
         }
         .proto-rom {
-            color: #f59e0b; /* amber-500 */
+            color: #f59e0b;
         }
         .hidden {
             display: none;
         }
         #log-output {
-            max-height: 200px;
+            height: 24rem; 
+            max-height: 50vh;
             overflow-y: auto;
-            background-color: #111827; /* gray-900 */
-            border: 1px solid #374151; /* gray-700 */
+            background-color: var(--bg-inset);
+            border: 1px solid var(--border-color);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
         }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-200">
+<body class="bg-[--bg-main] text-[--text-main]">
 
     <div class="container mx-auto p-4 md:p-8 relative">
         <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-white mb-2">ROM & BIOS Organizer</h1>
-            <p class="text-lg text-gray-400">Select files, a folder, or drag and drop your collection to analyze them.</p>
+            <h1 class="text-4xl font-bold mb-2">ROM & BIOS Organizer</h1>
+            <p class="text-lg text-[--text-light]">Select files, a folder, or drag and drop your collection to analyze them.</p>
         </header>
+        
+        <!-- Top Right Icons -->
+        <div class="absolute top-4 right-4 flex items-center space-x-4">
+            <!-- Theme Selector -->
+            <div class="relative">
+                <button id="theme-btn" class="text-[--text-light] hover:text-[--text-main] transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                </button>
+                <div id="theme-menu" class="hidden absolute right-0 mt-2 w-48 bg-[--bg-panel] rounded-md shadow-lg z-10 border border-[--border-color]">
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-200 hover:bg-[--bg-inset]" data-theme="dark">Dark Theme</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-800 hover:bg-[--bg-inset]" data-theme="blue">Inviting Blue</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-800 hover:bg-[--bg-inset]" data-theme="vibrant">Vibrant</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-200 hover:bg-[--bg-inset]" data-theme="retro">Retro</a>
+                </div>
+            </div>
+        </div>
 
         <div id="main-content" class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Left Column: Help Text & Settings -->
-            <div id="help-panel" class="md:col-span-1 bg-gray-800/50 rounded-lg p-6 border border-gray-700 h-fit">
-                <h3 class="text-lg font-bold text-white mb-4">Tips & Recommendations</h3>
+            <div id="help-panel" class="md:col-span-1 bg-[--bg-panel-trans] rounded-lg p-6 border border-[--border-color] h-fit">
+                <h3 class="text-lg font-bold mb-4">Tips & Recommendations</h3>
                 <div class="space-y-6 text-sm">
                     <div>
-                        <h4 class="font-semibold text-emerald-400 mb-1">Important Warning</h4>
-                        <p class="text-gray-300">Your browser may show a security prompt that says "Upload". **No files are actually uploaded.** This is a standard prompt that only gives this page permission to read your file names locally.</p>
+                        <h4 class="font-semibold text-[--text-accent] mb-1">Important Warning</h4>
+                        <p class="text-[--text-main]">Your browser may show a security prompt that says "Upload". **No files are actually uploaded.** This is a standard prompt that only gives this page permission to read your file names locally.</p>
                     </div>
                      <div>
-                        <h4 class="font-semibold text-emerald-400 mb-2">Performance Tuning</h4>
+                        <h4 class="font-semibold text-[--text-accent] mb-2">Performance Tuning</h4>
                         <div class="space-y-4">
                             <div>
                                 <div class="flex justify-between items-center mb-1">
-                                    <label for="chunk-size-slider" class="text-sm font-medium text-gray-300">Analysis Chunk Size</label>
-                                    <span id="chunk-size-value" class="text-sm font-bold text-emerald-400">200</span>
+                                    <label for="chunk-size-slider" class="text-sm font-medium">Analysis Chunk Size</label>
+                                    <span id="chunk-size-value" class="text-sm font-bold text-[--text-accent]">50</span>
                                 </div>
-                                <input type="range" id="chunk-size-slider" min="50" max="2000" step="50" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-                                <p class="text-xs text-gray-400 mt-1">How many files to analyze in a batch. Smaller values are safer and help prevent browser crashes. If you still have issues with a very large collection, try processing fewer folders at once.</p>
+                                <input type="range" id="chunk-size-slider" min="5" max="100" step="5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                                <div class="flex justify-between items-center text-xs text-[--text-light] mt-1">
+                                    <span>🐢 Safer</span>
+                                    <span>🚀 Faster</span>
+                                </div>
+                                <p class="text-xs text-[--text-light] mt-1">How many files to analyze in a batch. Smaller values are safer and help prevent browser crashes. If you still have issues with a very large collection, try processing fewer folders at once.</p>
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-1">
-                                    <label for="breathe-slider" class="text-sm font-medium text-gray-300">Scan Breathe Interval</label>
-                                    <span id="breathe-value" class="text-sm font-bold text-emerald-400">100</span>
+                                    <label for="breathe-slider" class="text-sm font-medium">Scan Pause Interval</label>
+                                    <span id="breathe-value" class="text-sm font-bold text-[--text-accent]">100</span>
                                 </div>
                                 <input type="range" id="breathe-slider" min="50" max="1000" step="50" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
-                                <p class="text-xs text-gray-400 mt-1">How many files to find before pausing. Lower values prevent crashes in huge folders.</p>
+                                <div class="flex justify-between items-center text-xs text-[--text-light] mt-1">
+                                    <span>🐢 Safer</span>
+                                    <span>🚀 Faster</span>
+                                </div>
+                                <p class="text-xs text-[--text-light] mt-1">How many files to find before pausing. Lower values mean more frequent pauses, which prevents crashes in huge folders.</p>
                             </div>
-                            <div class="text-xs text-gray-500 border-t border-gray-700 pt-4">
-                                <p><strong class="text-gray-400">Example for huge folders:</strong> Try setting Breathe Interval to 50 and Chunk Size to 100.</p>
+                            <div class="text-xs text-[--text-light] border-t border-[--border-color] pt-4">
+                                <p><strong class="text-[--text-main]">Example for huge folders:</strong> Try setting Pause Interval to 50 and Chunk Size to 100.</p>
                                 <p class="mt-2">If you see a 'Page Unresponsive' message, it's safe to click 'Wait' as the process often continues in the background. This can happen with very large collections, as performance depends on your computer's speed and memory. If it persists, reload the page and try lower performance settings. For extremely large collections, the best approach is to process fewer folders at a time.</p>
                             </div>
                         </div>
@@ -90,74 +163,98 @@
             </div>
 
             <!-- Right Column: Drop Zone & Log -->
-            <div class="md:col-span-2 space-y-8">
-                <div id="drop-zone-wrapper">
-                    <div id="drop-zone" class="border-2 border-dashed border-gray-600 rounded-lg p-8 md:p-16 text-center transition-all duration-300 ease-in-out bg-gray-800/50 h-full flex flex-col justify-center">
-                        <div>
-                            <svg class="mx-auto h-12 w-12 text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                            <p class="mt-4 text-lg text-gray-400">
-                                <span id="select-files-btn" class="font-semibold text-blue-400 cursor-pointer hover:underline">Click to select files</span>,
-                                <span id="select-folder-btn" class="font-semibold text-emerald-400 cursor-pointer hover:underline">select a folder</span>,
-                                or drag and drop
-                            </p>
-                            <p class="text-sm font-semibold text-emerald-300 mt-2">✓ All processing is done securely in your browser. Nothing is uploaded.</p>
+            <div class="md:col-span-2 flex flex-col space-y-8">
+                <div id="interaction-area">
+                    <div id="drop-zone-wrapper">
+                        <div id="drop-zone" class="border-2 border-dashed border-[--border-color] rounded-lg p-6 text-center transition-all duration-300 ease-in-out bg-[--bg-panel-trans]">
+                            <div class="flex flex-col justify-center h-full">
+                                <svg class="mx-auto h-8 w-8 text-[--text-light]" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <p class="mt-2 text-lg text-[--text-light]">
+                                    <span id="select-files-btn" class="font-semibold text-blue-400 cursor-pointer hover:underline">Click to select files</span>,
+                                    <span id="select-folder-btn" class="font-semibold text-[--text-accent] cursor-pointer hover:underline">select a folder</span>,
+                                    or drag and drop
+                                </p>
+                                <p class="text-sm font-semibold text-[--text-accent] mt-2">✓ All processing is done securely in your browser. Nothing is uploaded.</p>
+                            </div>
+                            <input type="file" id="file-input" class="hidden" multiple>
+                            <input type="file" id="folder-input" class="hidden" webkitdirectory multiple>
                         </div>
-                        <input type="file" id="file-input" class="hidden" multiple>
-                        <input type="file" id="folder-input" class="hidden" webkitdirectory multiple>
+                    </div>
+                    <div id="processing-indicator" class="hidden text-center bg-[--bg-panel-trans] rounded-lg p-6">
+                        <p class="text-lg font-semibold mb-4">Scanning & Analyzing Collection...</p>
+                        <div class="w-full bg-gray-700 rounded-full h-4 mb-4">
+                            <div id="progress-bar" class="bg-[--text-accent] h-4 rounded-full transition-all duration-150" style="width: 0%"></div>
+                        </div>
+                        <button id="stop-btn" class="mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Stop Scan</button>
                     </div>
                 </div>
 
-                <div id="log-and-progress-area" class="bg-gray-800/50 rounded-lg p-6">
-                    <div id="staging-area" class="hidden text-center">
-                        <p id="staging-text" class="text-lg text-gray-300 mb-4"></p>
-                        <button id="start-analysis-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300">
-                            Start Analysis
-                        </button>
-                    </div>
-                    <div id="processing-indicator" class="hidden text-center">
-                        <p class="text-lg font-semibold mb-4 text-white">Analyzing Collection...</p>
-                        <div class="w-full bg-gray-700 rounded-full h-4 mb-4">
-                            <div id="progress-bar" class="bg-emerald-500 h-4 rounded-full transition-all duration-150" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div id="log-output" class="text-left text-xs font-mono p-4 rounded-md h-48 overflow-y-scroll bg-gray-900 border border-gray-700"></div>
+                <div id="log-and-progress-area" class="bg-[--bg-panel-trans] rounded-lg p-6 relative">
+                     <button id="export-log-btn" class="absolute top-4 right-4 text-[--text-light] hover:text-[--text-main] transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <div id="log-output" class="text-left text-xs font-mono p-4 rounded-md"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Results Area -->
+        <!-- Results Area (Full Width) -->
         <div id="results-area" class="mt-8 hidden">
-            <!-- Placeholder -->
-            <div id="placeholder" class="text-center text-gray-500 py-12">
-                <p>No valid ROM/BIOS files found.</p>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Analysis Results</h2>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="format-btn" class="flex items-center space-x-2 text-[--text-light] hover:text-[--text-main] transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 5h10v10H5V5z" /></svg>
+                            <span>Format</span>
+                        </button>
+                         <div id="format-menu" class="hidden absolute right-0 mt-2 w-48 bg-[--bg-panel] rounded-md shadow-lg z-10 border border-[--border-color]">
+                            <a href="#" class="block px-4 py-2 text-sm text-[--text-main] hover:bg-[--bg-inset]" data-view="list">List View</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-[--text-main] hover:bg-[--bg-inset]" data-view="detail">Detail View</a>
+                        </div>
+                    </div>
+                     <div class="relative">
+                        <button id="export-btn" class="hidden text-[--text-light] hover:text-[--text-main] transition-colors">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <div id="export-menu" class="hidden absolute right-0 mt-2 w-48 bg-[--bg-panel] rounded-md shadow-lg z-10 border border-[--border-color]">
+                            <a href="#" id="export-csv" class="block px-4 py-2 text-sm text-[--text-main] hover:bg-[--bg-inset]">Export as CSV</a>
+                            <a href="#" id="export-xml" class="block px-4 py-2 text-sm text-[--text-main] hover:bg-[--bg-inset]">Export as XML</a>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <!-- Results Grid -->
-            <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Group cards will be inserted here -->
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Main Results Column -->
+                <div class="md:col-span-3">
+                    <div id="results-list-view" class="space-y-2">
+                        <!-- Accordion items will be inserted here -->
+                    </div>
+                     <div id="results-detail-view" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div id="master-pane" class="bg-[--bg-panel] rounded-lg p-2 h-96 overflow-y-auto"></div>
+                        <div id="detail-pane" class="bg-[--bg-panel] rounded-lg p-4 h-96 overflow-y-auto"></div>
+                    </div>
+                </div>
+                <!-- File Type Summary Column -->
+                <div id="file-type-summary" class="md:col-span-1 bg-[--bg-panel] rounded-lg p-4 h-fit">
+                    <h3 class="font-bold mb-2">Filter by Type</h3>
+                    <div id="file-type-list" class="space-y-1"></div>
+                </div>
+            </div>
+            
+            <!-- Placeholder -->
+            <div id="placeholder" class="text-center text-[--text-light] py-12 hidden">
+                <p>No valid ROM/BIOS files found.</p>
             </div>
         </div>
     </div>
-
-    <!-- Template for a result card -->
-    <template id="group-card-template">
-        <div class="group-card bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-            <div class="p-5">
-                <h3 class="text-xl font-bold text-white truncate"></h3>
-                <div class="mt-4 space-y-3">
-                    <div>
-                        <p class="text-sm font-medium text-emerald-400 mb-1">✓ Best Version</p>
-                        <div class="best-rom bg-gray-900/50 rounded-md p-3 text-sm"></div>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-400 mb-1">Other Versions</p>
-                        <ul class="other-roms-list space-y-2 text-sm text-gray-300"></ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -171,29 +268,41 @@
             const mainContent = document.getElementById('main-content');
             const resultsArea = document.getElementById('results-area');
             const placeholder = document.getElementById('placeholder');
-            const stagingArea = document.getElementById('staging-area');
-            const stagingText = document.getElementById('staging-text');
-            const startAnalysisBtn = document.getElementById('start-analysis-btn');
             const processingIndicator = document.getElementById('processing-indicator');
+            const stopBtn = document.getElementById('stop-btn');
             const progressBar = document.getElementById('progress-bar');
             const logOutput = document.getElementById('log-output');
-            const resultsGrid = document.getElementById('results-grid');
-            const groupCardTemplate = document.getElementById('group-card-template');
+            const resultsListView = document.getElementById('results-list-view');
+            const resultsDetailView = document.getElementById('results-detail-view');
+            const masterPane = document.getElementById('master-pane');
+            const detailPane = document.getElementById('detail-pane');
+            const fileTypeSummary = document.getElementById('file-type-summary');
+            const fileTypeList = document.getElementById('file-type-list');
             const chunkSizeSlider = document.getElementById('chunk-size-slider');
             const chunkSizeValue = document.getElementById('chunk-size-value');
             const breatheSlider = document.getElementById('breathe-slider');
             const breatheValue = document.getElementById('breathe-value');
+            const exportBtn = document.getElementById('export-btn');
+            const exportMenu = document.getElementById('export-menu');
+            const exportCsvBtn = document.getElementById('export-csv');
+            const exportXmlBtn = document.getElementById('export-xml');
+            const themeBtn = document.getElementById('theme-btn');
+            const themeMenu = document.getElementById('theme-menu');
+            const exportLogBtn = document.getElementById('export-log-btn');
+            const formatBtn = document.getElementById('format-btn');
+            const formatMenu = document.getElementById('format-menu');
 
             // --- App State ---
             let worker = null;
-            let CHUNK_SIZE = 200;
+            let CHUNK_SIZE = 50;
             let BREATHE_INTERVAL = 100;
-            let discoveredFiles = [];
+            let finalResults = {};
+            let currentView = 'list';
 
             // --- Worker Script ---
             const workerScript = `
                 let groups = {};
-                let stats = { totalSize: 0, types: {} };
+                let stats = { totalSize: 0, fileCount: 0, types: {} };
 
                 self.onmessage = function(e) {
                     const msg = e.data;
@@ -203,13 +312,12 @@
                             const file = chunk[i];
                             if (!file || !file.name || file.name === '.DS_Store' || file.name === 'Thumbs.db') continue;
                             
-                            // Process for grouping
                             const parsed = parseFilename(file.name);
                             if (!groups[parsed.baseName]) groups[parsed.baseName] = [];
                             groups[parsed.baseName].push(parsed);
 
-                            // Process for stats
                             stats.totalSize += file.size;
+                            stats.fileCount++;
                             const ext = file.name.split('.').pop().toLowerCase() || 'no_extension';
                             if (!stats.types[ext]) stats.types[ext] = { count: 0, size: 0 };
                             stats.types[ext].count++;
@@ -248,7 +356,7 @@
             function log(message) {
                 const timestamp = new Date().toLocaleTimeString();
                 const p = document.createElement('p');
-                p.innerHTML = `<span class="text-gray-500">${timestamp}:</span> ${message}`;
+                p.innerHTML = `<span class="text-[--text-light]">${timestamp}:</span> ${message}`;
                 logOutput.appendChild(p);
                 logOutput.scrollTop = logOutput.scrollHeight;
             }
@@ -261,104 +369,56 @@
                 const i = Math.floor(Math.log(bytes) / Math.log(k));
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
             }
+            
+            const fileIcons = {
+                'zip': `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 2h12v2H4V4zm0 4h12v2H4V8zm0 4h12v2H4v-2z" clip-rule="evenodd" /></svg>`,
+                '7z': `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 2h12v2H4V4zm0 4h12v2H4V8zm0 4h12v2H4v-2z" clip-rule="evenodd" /></svg>`,
+                'nes': `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm4 1a1 1 0 00-1 1v1a1 1 0 001 1h1a1 1 0 001-1V8a1 1 0 00-1-1H6zm5 0a1 1 0 00-1 1v1a1 1 0 001 1h1a1 1 0 001-1V8a1 1 0 00-1-1h-1z" /></svg>`,
+                'sfc': `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-500" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm4 1a1 1 0 00-1 1v1a1 1 0 001 1h1a1 1 0 001-1V8a1 1 0 00-1-1H6zm5 0a1 1 0 00-1 1v1a1 1 0 001 1h1a1 1 0 001-1V8a1 1 0 00-1-1h-1z" /></svg>`,
+                'smc': `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-500" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm4 1a1 1 0 00-1 1v1a1 1 0 001 1h1a1 1 0 001-1V8a1 1 0 00-1-1H6zm5 0a1 1 0 00-1 1v1a1 1 0 001 1h1a1 1 0 001-1V8a1 1 0 00-1-1h-1z" /></svg>`,
+                'gba': `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm4 1a1 1 0 00-1 1v1a1 1 0 001 1h1a1 1 0 001-1V8a1 1 0 00-1-1H6zm5 0a1 1 0 00-1 1v1a1 1 0 001 1h1a1 1 0 001-1V8a1 1 0 00-1-1h-1z" /></svg>`,
+                'gb': `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm4 1a1 1 0 00-1 1v1a1 1 0 001 1h1a1 1 0 001-1V8a1 1 0 00-1-1H6zm5 0a1 1 0 00-1 1v1a1 1 0 001 1h1a1 1 0 001-1V8a1 1 0 00-1-1h-1z" /></svg>`,
+                'default': `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>`
+            };
 
-            function initializeUIForDiscovery() {
-                mainContent.classList.add('hidden');
-                logOutput.innerHTML = '';
-                log('Starting file discovery...');
+            function getFileIcon(filename) {
+                const ext = filename.split('.').pop().toLowerCase();
+                return fileIcons[ext] || fileIcons['default'];
             }
 
             async function handleFileSelection(items) {
                 if (!items || items.length === 0) return;
-                initializeUIForDiscovery();
                 
-                let entriesProcessedInBatch = 0;
-                discoveredFiles = [];
-
-                async function processEntry(entry) {
-                    entriesProcessedInBatch++;
-                    if (entriesProcessedInBatch > BREATHE_INTERVAL) {
-                        await new Promise(r => setTimeout(r, 0));
-                        entriesProcessedInBatch = 0;
-                    }
-
-                    if (entry.isFile) {
-                        const file = await new Promise(resolve => entry.file(resolve));
-                        discoveredFiles.push(file);
-                    } else if (entry.isDirectory) {
-                        log(`Scanning directory: ${entry.name}`);
-                        const dirReader = entry.createReader();
-                        let entries;
-                        do {
-                            entries = await new Promise((resolve) => dirReader.readEntries(resolve));
-                            for (const subEntry of entries) {
-                                await processEntry(subEntry);
-                            }
-                        } while (entries.length > 0);
-                    }
-                }
-
-                try {
-                    const entries = Array.from(items).map(item => item.webkitGetAsEntry ? item.webkitGetAsEntry() : null).filter(Boolean);
-                    if (entries.length > 0) {
-                         for (const entry of entries) {
-                            await processEntry(entry);
-                        }
-                    } else { // Fallback for simple file list
-                        for(const file of items) {
-                            discoveredFiles.push(file);
-                        }
-                    }
-                } catch (e) {
-                    log(`<span class="text-red-500">Error during file traversal: ${e.message}</span>`);
-                }
-                
-                log(`Discovery complete. Found ${discoveredFiles.length} total files.`);
-                stageForAnalysis();
-            }
-
-            function stageForAnalysis() {
-                stagingArea.classList.remove('hidden');
-                processingIndicator.classList.add('hidden');
-                const fileCount = discoveredFiles.length;
-                stagingText.textContent = `Found ${fileCount} files. Ready to analyze.`;
-
-                if (fileCount > 100000) {
-                    log(`<strong class="text-yellow-400">Recommendation:</strong> Large collection detected. Consider lowering the 'Breathe Interval' and 'Chunk Size' for stability.`);
-                } else if (fileCount > 10000) {
-                     log(`<strong class="text-yellow-400">Recommendation:</strong> Medium collection detected. Default settings should be fine.`);
-                }
-            }
-
-            function startAnalysis() {
-                if (worker) worker.terminate();
-                worker = new Worker(workerUrl);
-
-                stagingArea.classList.add('hidden');
+                dropZoneWrapper.classList.add('hidden');
                 processingIndicator.classList.remove('hidden');
                 resultsArea.classList.add('hidden');
                 placeholder.classList.add('hidden');
-                resultsGrid.innerHTML = '';
+                resultsList.innerHTML = '';
+                logOutput.innerHTML = '';
                 progressBar.style.width = '0%';
                 
-                log('Worker initiated. Starting analysis...');
+                log('Worker initiated. Starting scan...');
 
+                if (worker) worker.terminate();
+                worker = new Worker(workerUrl);
+
+                let totalFileCount = 0;
                 let processedCount = 0;
-                const totalFileCount = discoveredFiles.length;
 
                 worker.onmessage = (e) => {
                     const data = e.data;
                     if (data.type === 'chunkProcessed') {
                         processedCount += data.count;
                         if (totalFileCount > 0) {
-                            const percent = Math.round((processedCount / totalFileCount) * 100);
-                            progressBar.style.width = `${percent}%`;
+                             const percent = Math.round((processedCount / totalFileCount) * 100);
+                             progressBar.style.width = `${percent}%`;
                         }
                     } else if (data.type === 'log') {
                         log(data.message);
                     } else if (data.type === 'complete') {
                         progressBar.style.width = `100%`;
                         log('Processing complete.');
+                        finalResults = { groups: data.groups, stats: data.stats };
                         displayResults(data.groups, data.stats);
                         worker.terminate();
                         worker = null;
@@ -371,30 +431,63 @@
                     if(worker) worker.terminate();
                 };
 
-                for (let i = 0; i < totalFileCount; i += CHUNK_SIZE) {
-                    const chunk = discoveredFiles.slice(i, i + CHUNK_SIZE).map(f => ({name: f.name, size: f.size}));
-                    worker.postMessage({ type: 'processChunk', chunk: chunk });
+                log('Starting directory traversal...');
+                const directoryQueue = Array.from(items).map(item => item.webkitGetAsEntry ? item.webkitGetAsEntry() : item);
+                
+                if (directoryQueue.every(entry => !entry.isDirectory)) {
+                    totalFileCount = directoryQueue.length;
+                    log(`Processing ${totalFileCount} selected files.`);
                 }
+
+                let entriesProcessedInBatch = 0;
+                while (directoryQueue.length > 0) {
+                    const entry = directoryQueue.shift();
+                    
+                    entriesProcessedInBatch++;
+                    if (entriesProcessedInBatch > BREATHE_INTERVAL) {
+                        await new Promise(r => setTimeout(r, 0)); 
+                        entriesProcessedInBatch = 0;
+                    }
+                    
+                    if (entry.isDirectory) {
+                        log(`Scanning directory: ${entry.name}`);
+                        const dirReader = entry.createReader();
+                        let fileBuffer = [];
+                        let entries;
+                        do {
+                            entries = await new Promise((resolve) => dirReader.readEntries(resolve));
+                            const subDirectories = [];
+                            for (const subEntry of entries) {
+                                if (subEntry.isFile) {
+                                    const file = await new Promise(resolve => subEntry.file(resolve));
+                                    fileBuffer.push({name: file.name, size: file.size});
+                                } else if (subEntry.isDirectory) {
+                                    subDirectories.push(subEntry);
+                                }
+                            }
+                            if (fileBuffer.length > 0) {
+                                worker.postMessage({ type: 'processChunk', chunk: [...fileBuffer] });
+                                log(`Found and sent ${fileBuffer.length} files from ${entry.name}...`);
+                                fileBuffer = [];
+                            }
+                            directoryQueue.unshift(...subDirectories);
+                        } while (entries.length > 0);
+                    } else { 
+                        const file = await new Promise(resolve => entry.file ? entry.file(resolve) : resolve(entry));
+                        worker.postMessage({ type: 'processChunk', chunk: [{name: file.name, size: file.size}] });
+                    }
+                }
+                
+                log(`Traversal complete. Finalizing analysis...`);
                 worker.postMessage({ type: 'finalize' });
             }
             
             function displayResults(groupedFiles, stats) {
-                processingIndicator.classList.add('hidden');
                 resultsArea.classList.remove('hidden');
-                const sortedGroupKeys = Object.keys(groupedFiles).sort((a, b) => a.localeCompare(b));
-
-                if (sortedGroupKeys.length === 0) {
-                    placeholder.classList.remove('hidden');
-                } else {
-                    log(`Displaying ${sortedGroupKeys.length} groups.`);
-                    for (const groupName of sortedGroupKeys) {
-                        displayGroup(groupName, groupedFiles[groupName]);
-                    }
-                }
+                resultsList.innerHTML = ''; 
                 
-                // Log the final statistics
                 log('--- Analysis Summary ---');
-                log(`Total Files Processed: ${discoveredFiles.length}`);
+                log(`Total Files Processed: ${stats.fileCount}`);
                 log(`Total Collection Size: ${formatBytes(stats.totalSize)}`);
                 log('File Types Breakdown:');
                 const sortedTypes = Object.entries(stats.types).sort(([,a],[,b]) => b.count - a.count);
@@ -402,35 +495,119 @@
                     log(`- .${ext}: ${data.count} files, ${formatBytes(data.size)}`);
                 }
                 log('--- End of Summary ---');
+
+                const sortedGroupKeys = Object.keys(groupedFiles).sort((a, b) => a.localeCompare(b));
+                if (sortedGroupKeys.length === 0) {
+                    placeholder.classList.remove('hidden');
+                } else {
+                    log(`Displaying ${sortedGroupKeys.length} groups.`);
+                    exportBtn.classList.remove('hidden');
+                    for (const groupName of sortedGroupKeys) {
+                        displayGroup(groupName, groupedFiles[groupName]);
+                    }
+                }
             }
 
             function displayGroup(groupName, items) {
-                const cardClone = groupCardTemplate.content.cloneNode(true);
-                const cardElement = cardClone.querySelector('.group-card');
-                const titleElement = cardElement.querySelector('h3');
-                const bestRomElement = cardElement.querySelector('.best-rom');
-                const otherRomsList = cardElement.querySelector('.other-roms-list');
+                const groupContainer = document.createElement('div');
+                groupContainer.className = 'bg-[--bg-panel] rounded-lg overflow-hidden';
 
-                titleElement.textContent = groupName;
-                titleElement.title = groupName;
-                const bestRom = items[0];
-                bestRomElement.textContent = bestRom.filename;
-                if(bestRom.isBadDump) bestRomElement.classList.add('bad-rom');
-                if(bestRom.isProto) bestRomElement.classList.add('proto-rom');
+                const header = document.createElement('button');
+                header.className = 'w-full text-left p-4 flex justify-between items-center bg-[--bg-inset] hover:bg-[--bg-panel-trans] transition-colors';
+                header.innerHTML = `
+                    <span class="font-bold truncate">${groupName}</span>
+                    <span class="text-sm text-[--text-light]">${items.length} files</span>
+                `;
+                
+                const content = document.createElement('div');
+                content.className = 'accordion-content p-4 space-y-2';
 
-                if (items.length > 1) {
-                    items.slice(1).forEach(rom => {
-                        const li = document.createElement('li');
-                        li.textContent = rom.filename;
-                        if (rom.isBadDump) li.classList.add('bad-rom');
-                        if (rom.isProto) li.classList.add('proto-rom');
-                        otherRomsList.appendChild(li);
-                    });
-                } else {
-                     otherRomsList.parentElement.classList.add('hidden');
-                }
-                resultsGrid.appendChild(cardElement);
+                items.forEach((item, index) => {
+                    const isBest = index === 0;
+                    const fileRow = document.createElement('div');
+                    fileRow.className = `flex items-center space-x-3 p-2 rounded-md ${isBest ? 'best-rom' : ''}`;
+                    
+                    let tagsHTML = '';
+                    if (isBest) tagsHTML += `<span class="text-xs font-bold text-[--text-accent]">Best</span>`;
+                    if (item.isBadDump) tagsHTML += `<span class="text-xs font-bold text-red-500 ml-2">Bad Dump</span>`;
+                    if (item.isProto) tagsHTML += `<span class="text-xs font-bold text-yellow-500 ml-2">Prototype</span>`;
+
+                    fileRow.innerHTML = `
+                        <div>${getFileIcon(item.filename)}</div>
+                        <div class="flex-grow truncate ${item.isBadDump ? 'bad-rom' : ''} ${item.isProto ? 'proto-rom' : ''}">${item.filename}</div>
+                        <div class="flex-shrink-0">${tagsHTML}</div>
+                    `;
+                    content.appendChild(fileRow);
+                });
+                
+                header.addEventListener('click', () => {
+                    const isOpen = content.style.maxHeight;
+                    if (isOpen && isOpen !== '0px') {
+                        content.style.maxHeight = '0px';
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    }
+                });
+                
+                groupContainer.appendChild(header);
+                groupContainer.appendChild(content);
+                resultsList.appendChild(groupContainer);
             }
+            
+            // --- Export Functions ---
+            function downloadFile(content, filename, mimeType) {
+                const a = document.createElement('a');
+                const blob = new Blob([content], {type: mimeType});
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(a.href);
+            }
+
+            function exportToCSV() {
+                const { groups } = finalResults;
+                let csvContent = "GroupName,FileName,IsBestVersion,IsBadDump,IsProto\n";
+                for (const groupName in groups) {
+                    groups[groupName].forEach((item, index) => {
+                        const isBest = index === 0;
+                        const row = [
+                            `"${groupName.replace(/"/g, '""')}"`,
+                            `"${item.filename.replace(/"/g, '""')}"`,
+                            isBest,
+                            item.isBadDump,
+                            item.isProto
+                        ].join(',');
+                        csvContent += row + "\n";
+                    });
+                }
+                downloadFile(csvContent, 'rom-analysis.csv', 'text/csv;charset=utf-8;');
+            }
+
+            function exportToXML() {
+                const { groups, stats } = finalResults;
+                let xmlContent = '<?xml version="1.0" encoding="UTF-8"?>\n<analysis>\n';
+                xmlContent += `  <summary>\n`;
+                xmlContent += `    <totalFiles>${stats.fileCount}</totalFiles>\n`;
+                xmlContent += `    <totalSize>${stats.totalSize}</totalSize>\n`;
+                xmlContent += `  </summary>\n`;
+                xmlContent += '  <groups>\n';
+                for (const groupName in groups) {
+                    xmlContent += `    <group name="${groupName.replace(/"/g, '&quot;')}">\n`;
+                    groups[groupName].forEach((item, index) => {
+                        const isBest = index === 0;
+                        xmlContent += `      <file isBest="${isBest}" isBadDump="${item.isBadDump}" isProto="${item.isProto}">${item.filename}</file>\n`;
+                    });
+                    xmlContent += `    </group>\n`;
+                }
+                xmlContent += '  </groups>\n</analysis>';
+                downloadFile(xmlContent, 'rom-analysis.xml', 'application/xml;charset=utf-8;');
+            }
+            
+            function exportLog() {
+                const logText = logOutput.innerText;
+                downloadFile(logText, 'rom-organizer-log.txt', 'text/plain;charset=utf-8;');
+            }
+
 
             // --- Settings Logic ---
             function loadSettings() {
@@ -456,6 +633,11 @@
                 log(`Settings updated. Breathe Interval: ${BREATHE_INTERVAL}, Chunk Size: ${CHUNK_SIZE}`);
             }
 
+            function setTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('romOrganizerTheme', theme);
+            }
+
             chunkSizeSlider.addEventListener('input', () => chunkSizeValue.textContent = chunkSizeSlider.value);
             chunkSizeSlider.addEventListener('change', saveSettings);
             breatheSlider.addEventListener('input', () => breatheValue.textContent = breatheSlider.value);
@@ -464,7 +646,6 @@
             // --- Initial Event Listeners ---
             loadSettings();
             log('Application ready. Select files or a folder to begin.');
-            startAnalysisBtn.addEventListener('click', startAnalysis);
             selectFilesBtn.addEventListener('click', () => fileInput.click());
             selectFolderBtn.addEventListener('click', () => folderInput.click());
             fileInput.addEventListener('change', (e) => handleFileSelection(e.target.files));
@@ -486,6 +667,54 @@
                     }
                 });
             });
+            exportBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                exportMenu.classList.toggle('hidden');
+            });
+            exportCsvBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                exportToCSV();
+                exportMenu.classList.add('hidden');
+            });
+            exportXmlBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                exportToXML();
+                exportMenu.classList.add('hidden');
+            });
+             themeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                themeMenu.classList.toggle('hidden');
+            });
+            themeMenu.addEventListener('click', (e) => {
+                if(e.target.tagName === 'A') {
+                    setTheme(e.target.dataset.theme);
+                    themeMenu.classList.add('hidden');
+                }
+            });
+            exportLogBtn.addEventListener('click', exportLog);
+            stopBtn.addEventListener('click', () => {
+                if (worker) {
+                    worker.terminate();
+                    worker = null;
+                    log('Scan stopped by user.');
+                    processingIndicator.classList.add('hidden');
+                    dropZoneWrapper.classList.remove('hidden');
+                }
+            });
+            document.addEventListener('click', (e) => {
+                if (!exportBtn.contains(e.target)) {
+                    exportMenu.classList.add('hidden');
+                }
+                 if (!themeBtn.contains(e.target)) {
+                    themeMenu.classList.add('hidden');
+                }
+            });
+
+            // Load saved theme on startup
+            const savedTheme = localStorage.getItem('romOrganizerTheme');
+            if (savedTheme) {
+                setTheme(savedTheme);
+            }
         });
     </script>
 
