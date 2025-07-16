@@ -91,6 +91,10 @@
             overflow: hidden;
             transition: max-height 0.3s ease-in-out;
         }
+        .filter-item.active {
+            background-color: var(--text-accent);
+            color: var(--bg-main);
+        }
     </style>
 </head>
 <body class="bg-[--bg-main] text-[--text-main]">
@@ -139,7 +143,7 @@
                                     <span>🐢 Safer</span>
                                     <span>🚀 Faster</span>
                                 </div>
-                                <p class="text-xs text-[--text-light] mt-1">How many files to analyze in a batch. Smaller values are safer and help prevent browser crashes. If you still have issues with a very large collection, try processing fewer folders at once.</p>
+                                <p class="text-xs text-[--text-light] mt-1">How many files to analyze in a batch. Smaller values are safer and help prevent browser crashes.</p>
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-1">
@@ -153,11 +157,21 @@
                                 </div>
                                 <p class="text-xs text-[--text-light] mt-1">How many files to find before pausing. Lower values mean more frequent pauses, which prevents crashes in huge folders.</p>
                             </div>
-                            <div class="text-xs text-[--text-light] border-t border-[--border-color] pt-4">
-                                <p><strong class="text-[--text-main]">Example for huge folders:</strong> Try setting Pause Interval to 50 and Chunk Size to 100.</p>
-                                <p class="mt-2">If you see a 'Page Unresponsive' message, it's safe to click 'Wait' as the process often continues in the background. This can happen with very large collections, as performance depends on your computer's speed and memory. If it persists, reload the page and try lower performance settings. For extremely large collections, the best approach is to process fewer folders at a time.</p>
-                            </div>
                         </div>
+                    </div>
+                    <div class="border-t border-[--border-color] pt-4">
+                        <h4 class="font-semibold text-emerald-400 mb-2">Pro Tips</h4>
+                        <ul class="list-disc list-inside text-[--text-main] space-y-2 text-xs">
+                            <li>For best performance, always run this tool on files stored on a **local drive**, not a network drive.</li>
+                            <li>If you see a 'Page Unresponsive' message, click 'Wait'. If it persists, move the **Scan Pause Interval** and **Analysis Chunk Size** sliders to the left (safer) and reload the page.</li>
+                            <li>For extremely large collections, the best approach is to process fewer folders at a time.</li>
+                             <li>To start over, simply refresh the page.</li>
+                        </ul>
+                    </div>
+                    <!-- File Type Summary Panel -->
+                    <div id="file-type-summary" class="hidden border-t border-[--border-color] pt-4">
+                        <h4 class="font-semibold text-emerald-400 mb-2">Filter by Type</h4>
+                        <div id="file-type-list" class="space-y-1"></div>
                     </div>
                 </div>
             </div>
@@ -231,22 +245,12 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <!-- Main Results Column -->
-                <div class="md:col-span-3">
-                    <div id="results-list-view" class="space-y-2">
-                        <!-- Accordion items will be inserted here -->
-                    </div>
-                     <div id="results-detail-view" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div id="master-pane" class="bg-[--bg-panel] rounded-lg p-2 h-96 overflow-y-auto"></div>
-                        <div id="detail-pane" class="bg-[--bg-panel] rounded-lg p-4 h-96 overflow-y-auto"></div>
-                    </div>
-                </div>
-                <!-- File Type Summary Column -->
-                <div id="file-type-summary" class="md:col-span-1 bg-[--bg-panel] rounded-lg p-4 h-fit">
-                    <h3 class="font-bold mb-2">Filter by Type</h3>
-                    <div id="file-type-list" class="space-y-1"></div>
-                </div>
+            <div id="results-list-view" class="space-y-2">
+                <!-- Accordion items will be inserted here -->
+            </div>
+             <div id="results-detail-view" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div id="master-pane" class="md:col-span-1 bg-[--bg-panel] rounded-lg p-2 h-96 overflow-y-auto"></div>
+                <div id="detail-pane" class="md:col-span-2 bg-[--bg-panel] rounded-lg p-4 h-96 overflow-y-auto"></div>
             </div>
             
             <!-- Placeholder -->
@@ -393,7 +397,7 @@
                 processingIndicator.classList.remove('hidden');
                 resultsArea.classList.add('hidden');
                 placeholder.classList.add('hidden');
-                resultsList.innerHTML = '';
+                resultsListView.innerHTML = '';
                 logOutput.innerHTML = '';
                 progressBar.style.width = '0%';
                 
@@ -483,18 +487,40 @@
             }
             
             function displayResults(groupedFiles, stats) {
+                processingIndicator.classList.add('hidden');
+                dropZoneWrapper.classList.remove('hidden');
                 resultsArea.classList.remove('hidden');
-                resultsList.innerHTML = ''; 
+                resultsListView.innerHTML = ''; 
+                masterPane.innerHTML = '';
+                detailPane.innerHTML = '';
+                fileTypeList.innerHTML = '';
                 
                 log('--- Analysis Summary ---');
                 log(`Total Files Processed: ${stats.fileCount}`);
                 log(`Total Collection Size: ${formatBytes(stats.totalSize)}`);
                 log('File Types Breakdown:');
                 const sortedTypes = Object.entries(stats.types).sort(([,a],[,b]) => b.count - a.count);
+                
+                const showAllButton = document.createElement('button');
+                showAllButton.className = 'filter-item w-full text-left p-2 rounded-md hover:bg-[--bg-inset] transition-colors active';
+                showAllButton.textContent = 'Show All';
+                showAllButton.onclick = () => filterResultsByType(null);
+                fileTypeList.appendChild(showAllButton);
+
                 for(const [ext, data] of sortedTypes) {
                     log(`- .${ext}: ${data.count} files, ${formatBytes(data.size)}`);
+                    const filterButton = document.createElement('button');
+                    filterButton.className = 'filter-item w-full text-left p-2 rounded-md hover:bg-[--bg-inset] transition-colors';
+                    filterButton.innerHTML = `
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold">.${ext}</span>
+                            <span class="text-[--text-light]">${data.count} / ${formatBytes(data.size)}</span>
+                        </div>
+                    `;
+                    filterButton.onclick = () => filterResultsByType(ext);
+                    fileTypeList.appendChild(filterButton);
                 }
-                log('--- End of Summary ---');
+                fileTypeSummary.classList.remove('hidden');
 
                 const sortedGroupKeys = Object.keys(groupedFiles).sort((a, b) => a.localeCompare(b));
                 if (sortedGroupKeys.length === 0) {
@@ -502,27 +528,98 @@
                 } else {
                     log(`Displaying ${sortedGroupKeys.length} groups.`);
                     exportBtn.classList.remove('hidden');
-                    for (const groupName of sortedGroupKeys) {
-                        displayGroup(groupName, groupedFiles[groupName]);
-                    }
+                    formatBtn.classList.remove('hidden');
+                    
+                    renderResults(sortedGroupKeys, groupedFiles);
                 }
             }
 
-            function displayGroup(groupName, items) {
-                const groupContainer = document.createElement('div');
-                groupContainer.className = 'bg-[--bg-panel] rounded-lg overflow-hidden';
+            function renderResults(groupKeys, groupedFiles, filterExt = null) {
+                resultsListView.innerHTML = '';
+                masterPane.innerHTML = '';
+                detailPane.innerHTML = 'Select a game to see details.';
 
-                const header = document.createElement('button');
-                header.className = 'w-full text-left p-4 flex justify-between items-center bg-[--bg-inset] hover:bg-[--bg-panel-trans] transition-colors';
-                header.innerHTML = `
-                    <span class="font-bold truncate">${groupName}</span>
-                    <span class="text-sm text-[--text-light]">${items.length} files</span>
-                `;
-                
-                const content = document.createElement('div');
-                content.className = 'accordion-content p-4 space-y-2';
+                let displayedCount = 0;
+                groupKeys.forEach(groupName => {
+                    const items = groupedFiles[groupName];
+                    const extensions = new Set(items.map(item => item.filename.split('.').pop().toLowerCase()));
+                    
+                    if (filterExt && !extensions.has(filterExt)) {
+                        return; // Skip this group if it doesn't match the filter
+                    }
+                    
+                    displayedCount++;
+                    
+                    // Render List View
+                    const groupContainer = document.createElement('div');
+                    groupContainer.className = 'bg-[--bg-panel] rounded-lg overflow-hidden result-group';
+                    groupContainer.dataset.extensions = Array.from(extensions).join(',');
 
-                items.forEach((item, index) => {
+                    const header = document.createElement('button');
+                    header.className = 'w-full text-left p-4 flex justify-between items-center bg-[--bg-inset] hover:bg-[--bg-panel-trans] transition-colors';
+                    header.innerHTML = `
+                        <span class="font-bold truncate">${groupName}</span>
+                        <span class="text-sm text-[--text-light]">${items.length} files</span>
+                    `;
+                    
+                    const content = document.createElement('div');
+                    content.className = 'accordion-content p-4 space-y-2';
+
+                    items.forEach((item, index) => {
+                        const isBest = index === 0;
+                        const fileRow = document.createElement('div');
+                        fileRow.className = `flex items-center space-x-3 p-2 rounded-md ${isBest ? 'best-rom' : ''}`;
+                        
+                        let tagsHTML = '';
+                        if (isBest) tagsHTML += `<span class="text-xs font-bold text-[--text-accent]">Best</span>`;
+                        if (item.isBadDump) tagsHTML += `<span class="text-xs font-bold text-red-500 ml-2">Bad Dump</span>`;
+                        if (item.isProto) tagsHTML += `<span class="text-xs font-bold text-yellow-500 ml-2">Prototype</span>`;
+
+                        fileRow.innerHTML = `
+                            <div>${getFileIcon(item.filename)}</div>
+                            <div class="flex-grow truncate ${item.isBadDump ? 'bad-rom' : ''} ${item.isProto ? 'proto-rom' : ''}">${item.filename}</div>
+                            <div class="flex-shrink-0">${tagsHTML}</div>
+                        `;
+                        content.appendChild(fileRow);
+                    });
+
+                    header.addEventListener('click', () => {
+                        const isOpen = content.style.maxHeight;
+                        if (isOpen && isOpen !== '0px') {
+                            content.style.maxHeight = '0px';
+                        } else {
+                            content.style.maxHeight = content.scrollHeight + "px";
+                        }
+                    });
+                    
+                    groupContainer.appendChild(header);
+                    groupContainer.appendChild(content);
+                    resultsListView.appendChild(groupContainer);
+
+                    // Render Master Pane for Detail View
+                    const masterItem = document.createElement('button');
+                    masterItem.className = 'w-full text-left p-2 rounded-md hover:bg-[--bg-inset] transition-colors result-group';
+                    masterItem.textContent = groupName;
+                    masterItem.dataset.extensions = Array.from(extensions).join(',');
+                    masterItem.onclick = () => {
+                        document.querySelectorAll('#master-pane button').forEach(btn => btn.classList.remove('bg-[--bg-inset]'));
+                        masterItem.classList.add('bg-[--bg-inset]');
+                        renderDetailPane(items);
+                    };
+                    masterPane.appendChild(masterItem);
+                });
+
+                if(displayedCount === 0 && filterExt) {
+                    placeholder.textContent = `No groups found with the '.${filterExt}' extension.`;
+                    placeholder.classList.remove('hidden');
+                } else {
+                    placeholder.classList.add('hidden');
+                }
+            }
+
+            function renderDetailPane(items) {
+                detailPane.innerHTML = '';
+                 items.forEach((item, index) => {
                     const isBest = index === 0;
                     const fileRow = document.createElement('div');
                     fileRow.className = `flex items-center space-x-3 p-2 rounded-md ${isBest ? 'best-rom' : ''}`;
@@ -537,21 +634,20 @@
                         <div class="flex-grow truncate ${item.isBadDump ? 'bad-rom' : ''} ${item.isProto ? 'proto-rom' : ''}">${item.filename}</div>
                         <div class="flex-shrink-0">${tagsHTML}</div>
                     `;
-                    content.appendChild(fileRow);
+                    detailPane.appendChild(fileRow);
                 });
+            }
+
+            function filterResultsByType(ext) {
+                document.querySelectorAll('.filter-item').forEach(btn => btn.classList.remove('active'));
+                if (ext) {
+                    event.target.closest('.filter-item').classList.add('active');
+                } else {
+                    document.querySelector('.filter-item').classList.add('active');
+                }
                 
-                header.addEventListener('click', () => {
-                    const isOpen = content.style.maxHeight;
-                    if (isOpen && isOpen !== '0px') {
-                        content.style.maxHeight = '0px';
-                    } else {
-                        content.style.maxHeight = content.scrollHeight + "px";
-                    }
-                });
-                
-                groupContainer.appendChild(header);
-                groupContainer.appendChild(content);
-                resultsList.appendChild(groupContainer);
+                const sortedGroupKeys = Object.keys(finalResults.groups).sort((a, b) => a.localeCompare(b));
+                renderResults(sortedGroupKeys, finalResults.groups, ext);
             }
             
             // --- Export Functions ---
@@ -701,12 +797,32 @@
                     dropZoneWrapper.classList.remove('hidden');
                 }
             });
+            formatBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                formatMenu.classList.toggle('hidden');
+            });
+            formatMenu.addEventListener('click', (e) => {
+                if(e.target.tagName === 'A') {
+                    currentView = e.target.dataset.view;
+                    if (currentView === 'list') {
+                        resultsListView.classList.remove('hidden');
+                        resultsDetailView.classList.add('hidden');
+                    } else {
+                        resultsListView.classList.add('hidden');
+                        resultsDetailView.classList.remove('hidden');
+                    }
+                    formatMenu.classList.add('hidden');
+                }
+            });
             document.addEventListener('click', (e) => {
                 if (!exportBtn.contains(e.target)) {
                     exportMenu.classList.add('hidden');
                 }
                  if (!themeBtn.contains(e.target)) {
                     themeMenu.classList.add('hidden');
+                }
+                if (!formatBtn.contains(e.target)) {
+                    formatMenu.classList.add('hidden');
                 }
             });
 
