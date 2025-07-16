@@ -93,23 +93,25 @@
             <input type="file" id="folder-input" class="hidden" webkitdirectory multiple>
         </div>
 
-        <!-- Analysis Results -->
-        <div id="results-area" class="mt-8 hidden">
-            <!-- Progress Panel -->
-            <div id="processing-indicator" class="text-center bg-gray-800/50 rounded-lg p-8">
+        <!-- Log & Progress Area -->
+        <div id="log-and-progress-area" class="mt-8 bg-gray-800/50 rounded-lg p-6">
+            <div id="processing-indicator" class="hidden text-center">
                 <p class="text-lg font-semibold mb-4 text-white">Scanning Collection...</p>
                 <div class="w-full bg-gray-700 rounded-full h-4 mb-4">
                     <div id="progress-bar" class="bg-emerald-500 h-4 rounded-full transition-all duration-150" style="width: 0%"></div>
                 </div>
-                <!-- Log Window -->
-                <div id="log-output" class="text-left text-xs font-mono p-4 rounded-md h-48 overflow-y-scroll"></div>
             </div>
+            <div id="log-output" class="text-left text-xs font-mono p-4 rounded-md h-48 overflow-y-scroll bg-gray-900 border border-gray-700"></div>
+        </div>
+
+        <!-- Results Area -->
+        <div id="results-area" class="mt-8 hidden">
             <!-- Placeholder -->
-            <div id="placeholder" class="text-center text-gray-500 py-12 hidden">
+            <div id="placeholder" class="text-center text-gray-500 py-12">
                 <p>No valid ROM/BIOS files found.</p>
             </div>
             <!-- Results Grid -->
-            <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+            <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Group cards will be inserted here -->
             </div>
         </div>
@@ -214,13 +216,13 @@
                 logOutput.scrollTop = logOutput.scrollHeight;
             }
 
-            function initializeUI() {
+            function initializeUIForScan() {
                 if (worker) worker.terminate();
                 worker = new Worker(workerUrl);
 
                 dropZone.classList.add('hidden');
-                resultsArea.classList.remove('hidden');
                 processingIndicator.classList.remove('hidden');
+                resultsArea.classList.add('hidden');
                 placeholder.classList.add('hidden');
                 resultsGrid.innerHTML = '';
                 logOutput.innerHTML = '';
@@ -231,7 +233,7 @@
 
             async function handleFileSelection(items) {
                 if (!items || items.length === 0) return;
-                initializeUI();
+                initializeUIForScan();
 
                 let totalFileCount = 0;
                 let processedCount = 0;
@@ -240,10 +242,8 @@
                     const data = e.data;
                     if (data.type === 'chunkProcessed') {
                         processedCount += data.count;
-                        if (totalFileCount > 0) {
-                            const percent = Math.round((processedCount / totalFileCount) * 100);
-                            progressBar.style.width = `${percent}%`;
-                        }
+                        // For folder drops, we don't know the total, so we can't update progress bar accurately.
+                        // The log provides the necessary feedback.
                     } else if (data.type === 'log') {
                         log(data.message);
                     } else if (data.type === 'complete') {
@@ -291,27 +291,31 @@
 
                 try {
                     const entries = Array.from(items).map(item => item.webkitGetAsEntry ? item.webkitGetAsEntry() : { isFile: true, name: item.name }).filter(Boolean);
+                    
+                    // If it's just files, we know the total count.
+                    if (entries.every(e => e.isFile)) {
+                        totalFileCount = entries.length;
+                        log(`Processing ${totalFileCount} selected files.`);
+                    }
+
                     for (const entry of entries) {
                         await processEntry(entry);
                     }
                 } catch (e) {
                     log(`<span class="text-red-500">Error during file traversal: ${e.message}</span>`);
-                    // Fallback for simple file list
-                    const fileList = Array.from(items).map(f => f.name);
-                    worker.postMessage({ type: 'processChunk', chunk: fileList });
                 }
 
                 if (fileBuffer.length > 0) {
                     worker.postMessage({ type: 'processChunk', chunk: fileBuffer });
                 }
                 
-                totalFileCount = filesFound;
-                log(`Traversal complete. Found ${totalFileCount} total files.`);
+                log(`Traversal complete. Found ${filesFound} total files.`);
                 worker.postMessage({ type: 'finalize' });
             }
             
             function displayResults(groupedFiles) {
                 processingIndicator.classList.add('hidden');
+                resultsArea.classList.remove('hidden');
                 const sortedGroupKeys = Object.keys(groupedFiles).sort((a, b) => a.localeCompare(b));
 
                 if (sortedGroupKeys.length === 0) {
@@ -383,6 +387,7 @@
             
             // --- Initial Event Listeners ---
             loadSettings();
+            log('Application ready. Select files or a folder to begin.');
             selectFilesBtn.addEventListener('click', () => fileInput.click());
             selectFolderBtn.addEventListener('click', () => folderInput.click());
             fileInput.addEventListener('change', (e) => handleFileSelection(e.target.files));
